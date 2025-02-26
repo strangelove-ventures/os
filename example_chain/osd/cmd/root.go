@@ -66,6 +66,7 @@ func NewRootCmd() *cobra.Command {
 		true,
 		emptyAppOptions{},
 		example_chain.EvmosAppOptions,
+		baseapp.SetChainID("os_9001-1"),
 	)
 
 	encodingConfig := sdktestutil.TestEncodingConfig{
