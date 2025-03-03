@@ -3,6 +3,7 @@ package keeper
 import (
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
@@ -13,7 +14,7 @@ import (
 // EvmHooks event hooks for evm tx processing
 type EvmHooks interface {
 	// Must be called after tx is processed successfully, if an error is returned, the whole transaction is reverted.
-	PostTxProcessing(ctx sdk.Context, msg core.Message, receipt *ethtypes.Receipt) error
+	PostTxProcessing(ctx sdk.Context, sender common.Address, msg core.Message, receipt *ethtypes.Receipt) error
 }
 
 var _ EvmHooks = MultiEvmHooks{}
@@ -27,9 +28,9 @@ func NewMultiEvmHooks(hooks ...EvmHooks) MultiEvmHooks {
 }
 
 // PostTxProcessing delegate the call to underlying hooks
-func (mh MultiEvmHooks) PostTxProcessing(ctx sdk.Context, msg core.Message, receipt *ethtypes.Receipt) error {
+func (mh MultiEvmHooks) PostTxProcessing(ctx sdk.Context, sender common.Address, msg core.Message, receipt *ethtypes.Receipt) error {
 	for i := range mh {
-		if err := mh[i].PostTxProcessing(ctx, msg, receipt); err != nil {
+		if err := mh[i].PostTxProcessing(ctx, sender, msg, receipt); err != nil {
 			return errorsmod.Wrapf(err, "EVM hook %T failed", mh[i])
 		}
 	}

@@ -220,7 +220,12 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 			// Status:            ,
 		}
 
-		if err = k.PostTxProcessing(tmpCtx, msg, receipt); err != nil {
+		signerAddr, err := signer.Sender(tx)
+		if err != nil {
+			return nil, errorsmod.Wrap(err, "failed to extract sender address from ethereum transaction")
+		}
+
+		if err = k.PostTxProcessing(tmpCtx, signerAddr, msg, receipt); err != nil {
 			// If hooks returns an error, revert the whole tx.
 			res.VmError = fmt.Sprintf("failed to execute post transaction processing: %s", err) // TODO: types.ErrPostTxProcessing.Error()
 			k.Logger(ctx).Error("tx post processing failed", "error", err)
