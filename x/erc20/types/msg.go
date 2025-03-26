@@ -17,10 +17,12 @@ import (
 
 var (
 	_ sdk.Msg              = &MsgConvertERC20{}
+	_ sdk.Msg              = &MsgConvertCoin{}
 	_ sdk.Msg              = &MsgUpdateParams{}
 	_ sdk.Msg              = &MsgRegisterERC20{}
 	_ sdk.Msg              = &MsgToggleConversion{}
 	_ sdk.HasValidateBasic = &MsgConvertERC20{}
+	_ sdk.HasValidateBasic = &MsgConvertCoin{}
 	_ sdk.HasValidateBasic = &MsgUpdateParams{}
 	_ sdk.HasValidateBasic = &MsgRegisterERC20{}
 	_ sdk.HasValidateBasic = &MsgToggleConversion{}
@@ -28,6 +30,7 @@ var (
 
 const (
 	TypeMsgConvertERC20 = "convert_ERC20"
+	TypeMsgConvertCoin  = "convert_coin"
 )
 
 var MsgConvertERC20CustomGetSigner = txsigning.CustomGetSigner{
@@ -71,6 +74,35 @@ func (msg MsgConvertERC20) ValidateBasic() error {
 
 // GetSignBytes encodes the message for signing
 func (msg MsgConvertERC20) GetSignBytes() []byte {
+	return sdk.MustSortJSON(AminoCdc.MustMarshalJSON(&msg))
+}
+
+// Route should return the name of the module
+func (msg MsgConvertCoin) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgConvertCoin) Type() string { return TypeMsgConvertCoin }
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgConvertCoin) ValidateBasic() error {
+	if len(msg.Coin.Denom) == 0 {
+		return errorsmod.Wrapf(errortypes.ErrInvalidCoins, "denom cannot be empty")
+	}
+	if !msg.Coin.Amount.IsPositive() {
+		return errorsmod.Wrapf(errortypes.ErrInvalidCoins, "cannot mint a non-positive amount")
+	}
+	_, err := sdk.AccAddressFromBech32(msg.Sender)
+	if err != nil {
+		return errorsmod.Wrap(err, "invalid sender address")
+	}
+	if !common.IsHexAddress(msg.Receiver) {
+		return errorsmod.Wrapf(errortypes.ErrInvalidAddress, "invalid receiver hex address %s", msg.Receiver)
+	}
+	return nil
+}
+
+// GetSignBytes encodes the message for signing
+func (msg MsgConvertCoin) GetSignBytes() []byte {
 	return sdk.MustSortJSON(AminoCdc.MustMarshalJSON(&msg))
 }
 
